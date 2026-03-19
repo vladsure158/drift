@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/drift-codes/drift/blob/main/docs/schema/registry.schema.json",
+  "title": "drift registry.json",
+  "description": "Global index of all drift-tracked projects",
+  "type": "object",
+  "required": ["version", "projects"],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Protocol version"
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "name", "status", "lastActivity"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Matches project.json id"
+          },
+          "path": {
+            "type": "string",
+            "description": "Absolute filesystem path to project root"
+          },
+          "name": {
+            "type": "string",
+            "description": "Project name (synced from project.json)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["idea", "active", "paused", "done", "abandoned"],
+            "description": "Project status (synced from project.json)"
+          },
+          "lastActivity": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last activity timestamp (synced from project.json)"
+          }
+        }
+      },
+      "description": "Array of project references"
+    }
+  }
+}
