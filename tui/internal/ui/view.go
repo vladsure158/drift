@@ -150,8 +150,9 @@ func (m Model) renderDetail(w, h int) string {
 	}
 
 	focused := m.focus == FocusDetail
+	home, _ := os.UserHomeDir()
 
-	// ── INFO ──
+	// ── INFO (fixed 7 lines) ──
 	infoActive := focused && m.detailSection == SectionInfo
 	st := StatusColors[string(p.Status)]
 	nameS := lipgloss.NewStyle().Foreground(st).Bold(true).Render(p.Name)
@@ -161,37 +162,52 @@ func (m Model) renderDetail(w, h int) string {
 	if infoActive {
 		marker = AccentB.Render("▸ ")
 	}
-	add(marker + nameS + meta)
+	add(marker + nameS + meta) // line 1: name + status
 
+	// line 2: description (always present)
 	if p.Description != nil {
-		add("    " + *p.Description)
-	} else if focused {
-		add("    " + Dim.Render("D to add description"))
+		add("    " + Truncate(*p.Description, w-6))
+	} else {
+		add("    " + Dim.Render("—"))
 	}
 
+	// line 3: tags (always present)
 	if len(p.Tags) > 0 {
 		var tags []string
 		for _, t := range p.Tags {
 			tags = append(tags, TagStyle.Render("#"+t))
 		}
-		add("    " + strings.Join(tags, " "))
+		add("    " + Truncate(strings.Join(tags, " "), w-6))
+	} else {
+		add("    " + Dim.Render("no tags"))
 	}
 
-	home, _ := os.UserHomeDir()
-	add("    " + Dim.Render(strings.Replace(p.Path, home, "~", 1)))
+	// line 4: path
+	add("    " + Dim.Render(Truncate(strings.Replace(p.Path, home, "~", 1), w-6)))
+
+	// line 5: updated
 	add("    " + Dim.Render("updated "+TimeSince(p.LastActivity)+" ago"))
 
-	if focused && infoActive {
-		var statuses []string
-		for i, s := range protocol.AllStatuses {
-			if p.Status == s {
+	// line 6: status selector (always shown when focused, dim placeholder otherwise)
+	var statuses []string
+	for i, s := range protocol.AllStatuses {
+		if p.Status == s {
+			if infoActive {
 				statuses = append(statuses, AccentB.Render(fmt.Sprintf("[%d]%s", i+1, string(s))))
 			} else {
-				statuses = append(statuses, Dim.Render(fmt.Sprintf(" %d %s", i+1, string(s))))
+				statuses = append(statuses, Bold.Render(fmt.Sprintf("[%s]", string(s))))
 			}
+		} else if infoActive {
+			statuses = append(statuses, Dim.Render(fmt.Sprintf(" %d %s", i+1, string(s))))
 		}
-		add("    " + strings.Join(statuses, " "))
 	}
+	if len(statuses) > 0 {
+		add("    " + strings.Join(statuses, " "))
+	} else {
+		add("")
+	}
+
+	// line 7: separator
 	add("")
 
 	// ── GOALS ──

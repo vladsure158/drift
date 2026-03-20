@@ -271,6 +271,7 @@ func (m *Model) mutate(fn func(*protocol.Project)) {
 	if p == nil || p.Missing {
 		return
 	}
+	projectID := p.ID // remember ID before re-sort
 	proj, err := protocol.ReadProject(p.Path)
 	if err != nil {
 		return
@@ -282,6 +283,14 @@ func (m *Model) mutate(fn func(*protocol.Project)) {
 	all, _ := protocol.LoadAllProjects()
 	m.allProjects = all
 	m.applyFilterAndSort()
+	// Restore selection to same project after re-sort
+	for i, pp := range m.projects {
+		if pp.ID == projectID {
+			m.listIdx = i
+			break
+		}
+	}
+	m.keepListInView()
 }
 
 func (m *Model) setFlash(msg string) {
