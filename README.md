@@ -23,12 +23,12 @@ Jira is overkill. Notion is too slow. You need something that works at the speed
 
 **Go install** (requires Go 1.21+):
 ```bash
-go install github.com/snowtema/drift/cmd@latest
+go install github.com/snowtema/drift/cmd@v0.1.0
 ```
 
 **Homebrew** (macOS/Linux):
 ```bash
-brew install drift-codes/tap/drift
+brew install snowtema/tap/drift
 ```
 
 **Binary download:**
