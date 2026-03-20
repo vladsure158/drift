@@ -399,6 +399,47 @@ func FlattenTree(node *TreeNode, indent int) []TreeLine {
 	return lines
 }
 
+// AddToGitignore appends ".drift/" to .gitignore if not already present.
+func AddToGitignore(dir string) {
+	gi := filepath.Join(dir, ".gitignore")
+	data, err := os.ReadFile(gi)
+	if err != nil {
+		return
+	}
+	if !strings.Contains(string(data), ".drift/") {
+		os.WriteFile(gi, []byte(strings.TrimRight(string(data), "\n")+"\n.drift/\n"), 0644)
+	}
+}
+
+const claudeMDSection = `
+## drift
+
+This project is tracked by drift (.drift/project.json).
+
+When working on this project:
+- At session start: read .drift/project.json to understand current goals, status, and recent notes
+- After completing significant work: add a note to .drift/project.json describing what was done
+- When a goal is completed: set its "done" field to true and recalculate "progress"
+- When new work is discovered: add it as a new goal
+- Keep notes concise (one line, timestamp in ISO 8601 UTC)
+- Update "lastActivity" on any change
+`
+
+// AddClaudeMD adds the drift integration section to CLAUDE.md (creating it if needed).
+func AddClaudeMD(dir string) {
+	claudePath := filepath.Join(dir, "CLAUDE.md")
+	data, err := os.ReadFile(claudePath)
+	if err != nil {
+		os.WriteFile(claudePath, []byte(strings.TrimSpace(claudeMDSection)+"\n"), 0644)
+		return
+	}
+	content := string(data)
+	if strings.Contains(content, "## drift") {
+		return
+	}
+	os.WriteFile(claudePath, []byte(strings.TrimRight(content, "\n")+"\n"+claudeMDSection), 0644)
+}
+
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil

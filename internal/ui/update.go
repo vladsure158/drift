@@ -94,6 +94,11 @@ func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.setFlash("theme: " + Themes[m.themeIdx].Name)
 		return m, FlashCmd()
 
+	// Scan for new projects
+	case "S":
+		m.enterScanBrowse()
+		return m, nil
+
 	// Filter
 	case "/":
 		m.startInput(InputFilter, "/")

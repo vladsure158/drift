@@ -35,9 +35,15 @@ func (m Model) View() string {
 		return ""
 	}
 
-	// Help overlay takes full screen
+	// Full-screen overlays
 	if m.focus == FocusHelp {
 		return m.renderHelp()
+	}
+	if m.focus == FocusScanBrowse {
+		return m.renderScanBrowse()
+	}
+	if m.focus == FocusScanResults {
+		return m.renderScanResults()
 	}
 
 	hh := m.headerHeight()
@@ -524,7 +530,7 @@ func (m Model) renderFooter() string {
 	switch m.focus {
 	case FocusList:
 		parts = append(parts, kv("↑↓", "nav"), kv("⏎", "open"), kv("s", "sort"), kv("t", "tree/flat"), kv("/", "filter"))
-		parts = append(parts, kv("?", "help"), kv("q", "quit"))
+		parts = append(parts, kv("S", "scan"), kv("?", "help"), kv("q", "quit"))
 	case FocusDetail:
 		switch m.detailSection {
 		case SectionInfo:
@@ -584,6 +590,7 @@ func (m Model) renderHelp() string {
 			{"/", "Filter projects by name (live search)"},
 			{":", "Jump to project by name"},
 			{"s", "Cycle sort mode (recent → progress → name → status)"},
+			{"S", "Scan for new projects (opens directory browser)"},
 			{"Esc", "Clear filter"},
 		}},
 		{"General", [][2]string{

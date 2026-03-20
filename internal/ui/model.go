@@ -14,9 +14,11 @@ import (
 type Focus int
 
 const (
-	FocusList   Focus = iota
+	FocusList        Focus = iota
 	FocusDetail
-	FocusHelp // ? overlay
+	FocusHelp        // ? overlay
+	FocusScanBrowse  // directory browser for scan
+	FocusScanResults // scan results with selection
 )
 
 type InputMode int
@@ -104,6 +106,19 @@ type Model struct {
 	bannerCollapsed bool
 	themeIdx        int
 	bannerHintTicks int // countdown for "b to hide" hint
+
+	// Scan: directory browser
+	scanBrowsePath   string
+	scanBrowseDirs   []string
+	scanBrowseIdx    int
+	scanBrowseScroll int
+	scanScanning     bool // true while scan is running
+
+	// Scan: results with selection
+	scanRoot          string
+	scanResults       []scanResultEntry
+	scanResultsIdx    int
+	scanResultsScroll int
 }
 
 func NewModel(version string) Model {
@@ -169,6 +184,10 @@ func (m Model) Init() tea.Cmd {
 type projectsLoadedMsg struct{ projects []protocol.FullProject }
 type flashTickMsg struct{}
 type bannerHintTickMsg struct{}
+type scanDoneMsg struct {
+	results []protocol.ScanResult
+	root    string
+}
 
 func loadProjectsCmd() tea.Msg {
 	projects, _ := protocol.LoadAllProjects()
@@ -201,6 +220,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case claudeExitMsg:
 		// Reload projects after returning from Claude Code
 		return m, loadProjectsCmd
+
+	case scanDoneMsg:
+		m.scanScanning = false
+		if m.focus == FocusScanBrowse {
+			m.scanRoot = msg.root
+			m.scanResults = nil
+			for _, r := range msg.results {
+				m.scanResults = append(m.scanResults, scanResultEntry{
+					Result:   r,
+					Selected: true, // select all by default
+				})
+			}
+			m.scanResultsIdx = 0
+			m.scanResultsScroll = 0
+			m.focus = FocusScanResults
+		}
+		return m, nil
 
 	case flashTickMsg:
 		m.flashTicks--
@@ -244,6 +280,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateList(msg)
 		case FocusDetail:
 			return m.updateDetail(msg)
+		case FocusScanBrowse:
+			return m.updateScanBrowse(msg)
+		case FocusScanResults:
+			return m.updateScanResults(msg)
 		}
 	}
 	return m, nil
