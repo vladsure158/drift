@@ -29,6 +29,14 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+brews:
+  - repository:
+      owner: snowtema
+      name: homebrew-tap
+    homepage: https://github.com/snowtema/drift
+    description: "Lightweight project tracker for AI-assisted coders. Terminal TUI + CLI."
+    license: "MIT"
+
 changelog:
   sort: asc
   filters:
