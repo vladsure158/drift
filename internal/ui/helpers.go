@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TimeSince(iso string) string {
@@ -42,20 +44,29 @@ func TimeSince(iso string) string {
 }
 
 func Truncate(s string, max int) string {
-	if len(s) <= max {
+	if lipgloss.Width(s) <= max {
 		return s
 	}
 	if max <= 1 {
 		return "…"
 	}
-	return s[:max-1] + "…"
+	// Trim rune by rune until visible width fits
+	runes := []rune(s)
+	for i := len(runes) - 1; i >= 0; i-- {
+		candidate := string(runes[:i]) + "…"
+		if lipgloss.Width(candidate) <= max {
+			return candidate
+		}
+	}
+	return "…"
 }
 
 func PadRight(s string, width int) string {
-	if len(s) >= width {
+	w := lipgloss.Width(s)
+	if w >= width {
 		return s
 	}
-	return s + strings.Repeat(" ", width-len(s))
+	return s + strings.Repeat(" ", width-w)
 }
 
 func Clamp(v, lo, hi int) int {
