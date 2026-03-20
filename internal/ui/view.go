@@ -10,6 +10,26 @@ import (
 	"github.com/snowtema/drift/internal/protocol"
 )
 
+// ASCII art banner (toilet "pagga" font — filled block style)
+var driftBanner = [3]string{
+	`░█▀▄░█▀▄░▀█▀░█▀▀░▀█▀`,
+	`░█░█░█▀▄░░█░░█▀▀░░█░`,
+	`░▀▀░░▀░▀░▀▀▀░▀░░░░▀░`,
+}
+
+const driftBannerHeight = 3
+
+func (m Model) showBanner() bool {
+	return !m.bannerCollapsed && m.height >= 22 && m.width >= 50
+}
+
+func (m Model) headerHeight() int {
+	if m.showBanner() {
+		return driftBannerHeight + 3 // top padding + banner + bottom padding + info line
+	}
+	return 1 // just info line
+}
+
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return ""
@@ -20,9 +40,16 @@ func (m Model) View() string {
 		return m.renderHelp()
 	}
 
+	hh := m.headerHeight()
 	listW := Clamp(m.width*38/100, 25, 44)
 	detailW := m.width - listW - 3
-	bodyH := m.height - 3
+	// bodyH: panel height passed to .Height()
+	// Original formula was height-3 (1 header + 1 footer + 1 buffer)
+	// With banner, add extra lines for banner area
+	bodyH := m.height - hh - 2
+	if bodyH < 4 {
+		bodyH = 4
+	}
 
 	header := m.renderHeader()
 	list := m.renderList(listW-2, bodyH-2)
@@ -49,7 +76,12 @@ func (m Model) View() string {
 func (m Model) renderHeader() string {
 	// Breadcrumb
 	var crumbs []string
-	crumbs = append(crumbs, HeaderStyle.Render("drift"))
+	if !m.showBanner() {
+		crumbs = append(crumbs, HeaderStyle.Render("DRIFT"))
+		if m.version != "" {
+			crumbs = append(crumbs, Dim.Render(" v"+m.version))
+		}
+	}
 
 	if p := m.selectedProject(); p != nil && m.focus == FocusDetail {
 		crumbs = append(crumbs, Dim.Render(" › "))
@@ -80,12 +112,41 @@ func (m Model) renderHeader() string {
 		}
 	}
 	right := strings.Join(sortParts, Dim.Render("·"))
+	// Theme indicator
+	themeName := Themes[m.themeIdx].Name
+	right += Dim.Render(" ") + Dim.Render("[") + AccentB.Render(themeName) + Dim.Render("]")
 
 	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 2
 	if gap < 1 {
 		gap = 1
 	}
-	return " " + left + strings.Repeat(" ", gap) + right + " "
+	infoLine := " " + left + strings.Repeat(" ", gap) + right + " "
+
+	if !m.showBanner() {
+		return infoLine
+	}
+
+	// Render ASCII art banner with top/bottom padding
+	var header strings.Builder
+	header.WriteString("\n") // top padding
+
+	// First banner line with version right-aligned
+	versionStr := Dim.Render("v" + m.version)
+	firstLine := " " + AccentB.Render(driftBanner[0])
+	vGap := m.width - lipgloss.Width(firstLine) - lipgloss.Width(versionStr) - 1
+	if vGap < 1 {
+		vGap = 1
+	}
+	header.WriteString(firstLine + strings.Repeat(" ", vGap) + versionStr + "\n")
+
+	// Remaining banner lines
+	for _, line := range driftBanner[1:] {
+		header.WriteString(" " + AccentB.Render(line) + "\n")
+	}
+
+	header.WriteString("\n") // bottom padding
+	header.WriteString(infoLine)
+	return header.String()
 }
 
 // ─── List Panel ──────────────────────────────────
@@ -475,7 +536,17 @@ func (m Model) renderFooter() string {
 // ─── Help Screen ─────────────────────────────────
 
 func (m Model) renderHelp() string {
-	title := AccentB.Render("  drift — keyboard shortcuts\n")
+	var titleBuf strings.Builder
+	titleBuf.WriteString("\n")
+	for _, line := range driftBanner {
+		titleBuf.WriteString("  " + AccentB.Render(line) + "\n")
+	}
+	vStr := ""
+	if m.version != "" {
+		vStr = " v" + m.version
+	}
+	titleBuf.WriteString(Dim.Render("  keyboard shortcuts"+vStr) + "\n")
+	title := titleBuf.String()
 
 	sections := []struct {
 		header string
@@ -507,6 +578,8 @@ func (m Model) renderHelp() string {
 			{"Esc", "Clear filter"},
 		}},
 		{"General", [][2]string{
+			{"b", "Toggle banner"},
+			{"T", "Cycle color theme"},
 			{"?", "Toggle this help"},
 			{"q", "Quit (from list)"},
 			{"Ctrl+C", "Force quit"},

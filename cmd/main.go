@@ -10,6 +10,8 @@ import (
 	"github.com/snowtema/drift/internal/ui"
 )
 
+var version = "dev"
+
 func main() {
 	args := os.Args[1:]
 
@@ -134,7 +136,7 @@ func main() {
 
 func launchTUI() {
 	p := tea.NewProgram(
-		ui.NewModel(),
+		ui.NewModel(version),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)

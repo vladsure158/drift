@@ -98,17 +98,64 @@ type Model struct {
 	// Confirm dialog
 	confirmMsg    string
 	confirmAction func()
+
+	// Header & theme
+	version         string
+	bannerCollapsed bool
+	themeIdx        int
 }
 
-func NewModel() Model {
+func NewModel(version string) Model {
 	ti := textinput.New()
 	ti.Prompt = ""
 	ti.CharLimit = 200
 
-	return Model{
-		focus:     FocusList,
-		textInput: ti,
+	// Load saved preferences
+	cfg := protocol.ReadConfig()
+	themeIdx := 0
+	for i, t := range Themes {
+		if t.Name == cfg.Theme {
+			themeIdx = i
+			break
+		}
 	}
+	ApplyTheme(Themes[themeIdx])
+
+	var viewMode ListViewMode
+	if cfg.ViewMode == "tree" {
+		viewMode = ViewTree
+	}
+
+	var sortMode SortMode
+	for i, label := range SortLabels {
+		if label == cfg.SortMode {
+			sortMode = SortMode(i)
+			break
+		}
+	}
+
+	return Model{
+		focus:           FocusList,
+		textInput:       ti,
+		version:         version,
+		themeIdx:        themeIdx,
+		bannerCollapsed: cfg.BannerCollapsed,
+		viewMode:        viewMode,
+		sortMode:        sortMode,
+	}
+}
+
+func (m *Model) saveConfig() {
+	viewMode := "flat"
+	if m.viewMode == ViewTree {
+		viewMode = "tree"
+	}
+	protocol.WriteConfig(protocol.UIConfig{
+		Theme:           Themes[m.themeIdx].Name,
+		ViewMode:        viewMode,
+		SortMode:        SortLabels[int(m.sortMode)],
+		BannerCollapsed: m.bannerCollapsed,
+	})
 }
 
 func (m Model) Init() tea.Cmd {
@@ -284,9 +331,9 @@ func (m *Model) selectedProject() *protocol.FullProject {
 }
 
 func (m *Model) listHeight() int {
-	// Must match what View() passes to renderList:
-	// bodyH = height - 3, then renderList gets bodyH - 2 = height - 5
-	h := m.height - 5
+	// Must match what View() passes to renderList: bodyH-2
+	hh := m.headerHeight()
+	h := m.height - hh - 2 - 2
 	if h < 3 {
 		return 3
 	}

@@ -68,6 +68,7 @@ func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.applyFilterAndSort()
 		m.listIdx = 0
 		m.listScroll = 0
+		m.saveConfig()
 
 	// Toggle tree/flat view
 	case "t":
@@ -78,6 +79,20 @@ func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.listIdx = 0
 		m.listScroll = 0
+		m.saveConfig()
+
+	// Toggle banner
+	case "b":
+		m.bannerCollapsed = !m.bannerCollapsed
+		m.saveConfig()
+
+	// Cycle theme
+	case "T":
+		m.themeIdx = (m.themeIdx + 1) % len(Themes)
+		ApplyTheme(Themes[m.themeIdx])
+		m.saveConfig()
+		m.setFlash("theme: " + Themes[m.themeIdx].Name)
+		return m, FlashCmd()
 
 	// Filter
 	case "/":
@@ -173,6 +188,20 @@ func (m Model) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.keepListInView()
 			m.resetDetail()
 		}
+
+	// Toggle banner
+	case "b":
+		m.bannerCollapsed = !m.bannerCollapsed
+		m.saveConfig()
+		return m, nil
+
+	// Cycle theme
+	case "T":
+		m.themeIdx = (m.themeIdx + 1) % len(Themes)
+		ApplyTheme(Themes[m.themeIdx])
+		m.saveConfig()
+		m.setFlash("theme: " + Themes[m.themeIdx].Name)
+		return m, FlashCmd()
 
 	// ── Actions ──
 
