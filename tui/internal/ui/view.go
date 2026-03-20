@@ -459,12 +459,13 @@ func (m Model) renderFooter() string {
 		switch m.detailSection {
 		case SectionInfo:
 			parts = append(parts, kv("↑↓", "nav"), kv("tab", "section"), kv("1-5", "status"), kv("D", "describe"))
-			parts = append(parts, kv("[/]", "prev/next"), kv("?", "help"), kv("esc", "back"))
+			parts = append(parts, kv("c", "claude"), kv("esc", "back"))
 		case SectionGoals:
 			parts = append(parts, kv("↑↓", "nav"), kv("⏎", "toggle"), kv("g", "add"), kv("x", "delete"))
-			parts = append(parts, kv("tab", "section"), kv("[/]", "prev/next"), kv("esc", "back"))
+			parts = append(parts, kv("c", "claude"), kv("esc", "back"))
 		case SectionNotes:
-			parts = append(parts, kv("n", "add note"), kv("tab", "section"), kv("[/]", "prev/next"), kv("esc", "back"))
+			parts = append(parts, kv("n", "add note"), kv("tab", "section"))
+			parts = append(parts, kv("c", "claude"), kv("esc", "back"))
 		}
 	}
 
@@ -497,6 +498,7 @@ func (m Model) renderHelp() string {
 			{"Space/Enter", "Toggle goal done (on goal)"},
 			{"x", "Delete goal (on goal, with confirm)"},
 			{"1-5", "Set status: 1=active 2=idea 3=paused 4=done 5=abandoned"},
+			{"c", "Open Claude Code (passes first uncompleted goal)"},
 		}},
 		{"Search & Sort", [][2]string{
 			{"/", "Filter projects by name (live search)"},

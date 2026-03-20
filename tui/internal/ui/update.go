@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"os/exec"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -191,6 +192,10 @@ func (m Model) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.startInputWithValue(InputDesc, "desc:", desc)
 
+	// Launch Claude Code in project directory
+	case "c":
+		return m, m.launchClaude(p)
+
 	// Toggle goal done (Space or Enter on a goal)
 	case "enter", " ":
 		if m.detailSection == SectionGoals && len(p.Goals) > 0 && m.detailCursor < len(p.Goals) {
@@ -374,6 +379,19 @@ func (m Model) updateConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	return m, nil
+}
+
+// ─── Launch Claude Code ──────────────────────────
+
+type claudeExitMsg struct{}
+
+func (m *Model) launchClaude(p *protocol.FullProject) tea.Cmd {
+	c := exec.Command("claude")
+	c.Dir = p.Path
+
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		return claudeExitMsg{}
+	})
 }
 
 // ─── Help Overlay ────────────────────────────────

@@ -144,6 +144,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.applyFilterAndSort()
 		return m, nil
 
+	case claudeExitMsg:
+		// Reload projects after returning from Claude Code
+		return m, loadProjectsCmd
+
 	case flashTickMsg:
 		m.flashTicks--
 		if m.flashTicks <= 0 {

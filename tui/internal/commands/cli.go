@@ -68,6 +68,35 @@ func needsProject() *protocol.Project {
 	return p
 }
 
+const claudeMDSection = `
+## drift
+
+This project is tracked by drift (.drift/project.json).
+
+When working on this project:
+- At session start: read .drift/project.json to understand current goals, status, and recent notes
+- After completing significant work: add a note to .drift/project.json describing what was done
+- When a goal is completed: set its "done" field to true and recalculate "progress"
+- When new work is discovered: add it as a new goal
+- Keep notes concise (one line, timestamp in ISO 8601 UTC)
+- Update "lastActivity" on any change
+`
+
+func addClaudeMD(dir string) {
+	claudePath := filepath.Join(dir, "CLAUDE.md")
+	data, err := os.ReadFile(claudePath)
+	if err != nil {
+		// No CLAUDE.md — create one with drift section
+		os.WriteFile(claudePath, []byte(strings.TrimSpace(claudeMDSection)+"\n"), 0644)
+		return
+	}
+	content := string(data)
+	if strings.Contains(content, "## drift") {
+		return // already has drift section
+	}
+	os.WriteFile(claudePath, []byte(strings.TrimRight(content, "\n")+"\n"+claudeMDSection), 0644)
+}
+
 func addToGitignore(dir string) {
 	gi := filepath.Join(dir, ".gitignore")
 	data, err := os.ReadFile(gi)
@@ -105,6 +134,7 @@ func Init(dir string) {
 	protocol.WriteProject(root, p)
 	protocol.SyncToRegistry(root, p)
 	addToGitignore(root)
+	addClaudeMD(root)
 
 	fmt.Printf("\n  %s %s — %s\n", green.Render("✓"), bold.Render("drift init"), cyan.Render(p.Name))
 	fmt.Printf("  Status: %s | Progress: %d%%\n", p.Status, p.Progress)
@@ -498,6 +528,7 @@ func Scan(dir string, doInit bool, maxDepth int) {
 		protocol.WriteProject(f.Path, p)
 		protocol.SyncToRegistry(f.Path, p)
 		addToGitignore(f.Path)
+		addClaudeMD(f.Path)
 		rel, _ := filepath.Rel(root, f.Path)
 		fmt.Printf("  %s %s\n", green.Render("✓"), rel)
 	}
