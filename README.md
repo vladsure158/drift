@@ -3,132 +3,154 @@
 Lightweight project tracker for vibe coders. Track dozens of AI-assisted projects without leaving your terminal.
 
 ```
-drift — 6 projects
+drift — 53 projects
 
-  STATUS   PROGRESS  NAME             LAST ACTIVITY
-  ●active  ████░ 65% landing-saas     2h ago
-  ●active  █████ 90% ai-chatbot       5h ago
-  ✓done    █████100% portfolio-v2     2d ago
-  ○idea    ░░░░░  0% crypto-tracker   3d ago
-  ◊paused  ██░░░ 30% email-tool       1w ago
-  ✗abandoned       0% old-experiment  3w ago
+  STATUS  NAME                      PROGRESS  LAST
+  ●  bot/intra-day-bot                  0%    2d
+  ●  new inc/drift                     82%    5m
+  ✓  new inc/mydeadprojects           100%    1h
+  ○  tools/marketing-tracker          0%    3d
+  ◇  flow-exp/cinema                    0%    1w
 ```
 
 ## The Problem
 
-You vibe-code 3-7 projects a day. After a week you have 20+ folders and can't remember:
-- What each project does
-- Where you left off
-- What's next
-- Which ones are worth continuing
+You vibe-code 3-7 projects a day with Claude, Cursor, v0. After a week you have 20+ folders and can't remember what each one does, where you left off, or which ones are worth continuing.
 
 Jira is overkill. Notion is too slow. You need something that works at the speed of `ls`.
 
-## How It Works
+## Install
 
-drift is a **protocol** — a simple file format (`.drift/project.json`) that any tool can read and write. The reference implementation is a **Claude Code skill** that works with zero installation.
-
+**Go install** (requires Go 1.21+):
+```bash
+go install github.com/drift-codes/drift/cmd@latest
 ```
-your-project/
-  .drift/
-    project.json    ← project metadata, goals, notes
 
-~/.drift/
-  registry.json     ← index of all your projects
+**Homebrew** (macOS/Linux):
+```bash
+brew install drift-codes/tap/drift
+```
+
+**Binary download:**
+Grab a prebuilt binary from [Releases](https://github.com/drift-codes/drift/releases).
+
+**From source:**
+```bash
+git clone https://github.com/drift-codes/drift
+cd drift
+go build -o drift ./cmd/
 ```
 
 ## Quick Start
 
-### Option 1: Claude Code Skill (recommended, zero install)
+```bash
+# Initialize drift in your project
+cd ~/my-project
+drift init
+
+# Add goals and notes
+drift goal "MVP landing page"
+drift goal "Stripe integration"
+drift note "scaffolded with create-next-app"
+
+# Mark goal done
+drift goal done 1
+
+# See status
+drift status
+
+# Scan a directory for all projects
+drift scan ~/Develop --depth=2 --init
+
+# Open fullscreen TUI
+drift
+```
+
+## TUI
+
+Fullscreen dual-panel interface. No flicker. Keyboard-driven.
+
+```
+drift               # launch TUI
+```
+
+Press `?` inside for full keyboard reference. Highlights:
+
+| Key | Action |
+|-----|--------|
+| `j/k` or arrows | Navigate |
+| `Enter` | Open project detail |
+| `Esc` | Back to list |
+| `Tab` | Cycle sections (info/goals/notes) |
+| `Space/Enter` | Toggle goal done |
+| `n` | Add note |
+| `g` | Add goal |
+| `1-5` | Set status (active/idea/paused/done/abandoned) |
+| `s` | Cycle sort (recent/progress/name/status) |
+| `t` | Toggle tree/flat view |
+| `/` | Live filter |
+| `c` | Open Claude Code in project |
+| `?` | Full help |
+
+## CLI
+
+All commands work without the TUI:
 
 ```bash
-# Copy the skill to your Claude Code skills directory
-cp -r skills/drift ~/.claude/skills/drift
-
-# Now in any Claude Code session:
-/drift init
-/drift note "added hero section"
-/drift goal "pricing page"
-/drift goal done 1
-/drift list
+drift init [dir]              # Initialize project
+drift status                  # Show current project
+drift list [--sort=MODE]      # List all projects
+drift note "text"             # Add a note
+drift goal "text"             # Add a goal
+drift goal done N             # Mark goal #N done
+drift progress N              # Set progress (0-100)
+drift set-status STATUS       # Change status
+drift describe "text"         # Set description
+drift tag tag1 tag2           # Add tags
+drift link type url           # Set a link (repo/deploy/design)
+drift scan [dir] [--depth=N]  # Find untracked projects
+drift scan --init [dir]       # Find and init all
+drift open name               # Get project path
+drift help                    # Show help
 ```
 
-### Option 2: Manual (works with any editor)
+## Claude Code Integration
 
-Create `.drift/project.json` in your project:
+drift integrates with Claude Code in two ways:
 
-```json
-{
-  "id": "generate-a-uuid-here",
-  "name": "my-project",
-  "description": "What this project does",
-  "status": "active",
-  "progress": 0,
-  "tags": ["next.js", "tailwind"],
-  "created": "2026-03-19T10:00:00Z",
-  "lastActivity": "2026-03-19T10:00:00Z",
-  "goals": [
-    { "text": "Hero section", "done": true },
-    { "text": "Pricing page", "done": false }
-  ],
-  "notes": [
-    { "ts": "2026-03-19T12:00:00Z", "text": "Added gradient background" }
-  ],
-  "links": {
-    "repo": "https://github.com/you/my-project",
-    "deploy": null,
-    "design": null
-  }
-}
-```
+**1. Launch from TUI:** Press `c` in project detail to open an interactive Claude Code session in that project directory.
 
-## Commands
+**2. Auto-tracking via CLAUDE.md:** `drift init` adds a `## drift` section to the project's CLAUDE.md. Claude Code reads this at session start and automatically maintains notes and goals in `.drift/project.json` as it works.
 
-| Command | Description |
-|---------|-------------|
-| `drift init` | Initialize drift in current project |
-| `drift status` | Show current project status |
-| `drift note "text"` | Add a timestamped note |
-| `drift goal "text"` | Add a goal |
-| `drift goal done N` | Mark goal #N as done |
-| `drift progress N` | Set progress (0-100) |
-| `drift set-status active` | Change status (idea/active/paused/done/abandoned) |
-| `drift list` | List all projects |
-| `drift scan ~/Develop` | Find untracked projects |
-| `drift open name` | Get project path |
-| `drift describe "text"` | Set project description |
-| `drift tag next.js ai` | Add tags |
-| `drift link deploy https://...` | Set a link |
+**3. Claude Code skill:** Copy `skills/drift/SKILL.md` to `~/.claude/skills/drift/` for `/drift` commands inside Claude Code sessions.
 
 ## Protocol
 
-drift is protocol-first. The `.drift/` format is the product — implementations are just consumers.
+drift is **protocol-first**. The `.drift/` file format is the product. CLI and TUI are just consumers.
+
+```
+your-project/
+  .drift/
+    project.json    # project metadata, goals, notes
+
+~/.drift/
+  registry.json     # index of all your projects
+```
+
+Anyone can build a drift-compatible tool. As long as it reads/writes `.drift/project.json`, it works.
 
 - [Protocol Specification](docs/protocol.md)
-- [project.json Schema](docs/schema/project.schema.json)
-- [registry.json Schema](docs/schema/registry.schema.json)
-
-Anyone can build a drift-compatible tool: CLI in any language, TUI, VS Code extension, web dashboard. As long as it reads and writes the `.drift/` format, it's compatible.
+- [JSON Schema: project.json](docs/schema/project.schema.json)
+- [JSON Schema: registry.json](docs/schema/registry.schema.json)
 
 ## Design Principles
 
 - **File-based** — plain JSON, no database, no server
 - **Zero-friction** — `drift init` and you're done
-- **Auto-enrichment** — detects stack, repo URL, deploy URL automatically
-- **Tool-agnostic** — works with Claude, Cursor, any AI assistant, or no AI at all
+- **Auto-enrichment** — detects stack, repo URL from git/package.json/etc.
+- **Tool-agnostic** — works with Claude, Cursor, any AI, or no AI at all
 - **Local-first** — your data stays on your machine
-- **Append-only notes** — never lose context
-
-## Roadmap
-
-- [x] Protocol specification
-- [x] JSON Schema
-- [x] Claude Code skill
-- [ ] CLI (TypeScript, `npx drift-cli`)
-- [ ] TUI (Norton Commander-style dual panel)
-- [ ] Web dashboard
-- [ ] MCP server for Claude Code
-- [ ] VS Code extension
+- **Single binary** — 5MB Go binary, zero runtime dependencies
 
 ## License
 
