@@ -1,4 +1,4 @@
-module github.com/drift-codes/drift
+module github.com/snowtema/drift
 
 go 1.26.1
 

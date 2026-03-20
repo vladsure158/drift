@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/drift-codes/drift/internal/commands"
-	"github.com/drift-codes/drift/internal/ui"
+	"github.com/snowtema/drift/internal/commands"
+	"github.com/snowtema/drift/internal/ui"
 )
 
 func main() {

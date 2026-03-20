@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/drift-codes/drift/internal/protocol"
+	"github.com/snowtema/drift/internal/protocol"
 )
 
 // ─── State Machine ───────────────────────────────

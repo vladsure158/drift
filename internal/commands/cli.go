@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/drift-codes/drift/internal/protocol"
-	"github.com/drift-codes/drift/internal/ui"
+	"github.com/snowtema/drift/internal/protocol"
+	"github.com/snowtema/drift/internal/ui"
 )
 
 var (

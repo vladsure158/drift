@@ -28,9 +28,9 @@ archives:
 
 brews:
   - repository:
-      owner: drift-codes
+      owner: snowtema
       name: homebrew-tap
-    homepage: "https://github.com/drift-codes/drift"
+    homepage: "https://github.com/snowtema/drift"
     description: "Lightweight project tracker for vibe coders"
     license: "MIT"
     install: |

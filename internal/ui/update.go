@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/drift-codes/drift/internal/protocol"
+	"github.com/snowtema/drift/internal/protocol"
 )
 
 // ─── List Mode ───────────────────────────────────

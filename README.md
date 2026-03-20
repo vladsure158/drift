@@ -9,7 +9,7 @@ drift — 53 projects
   ●  bot/intra-day-bot                  0%    2d
   ●  new inc/drift                     82%    5m
   ✓  new inc/mydeadprojects           100%    1h
-  ○  tools/marketing-tracker          0%    3d
+  ○  tools/marketing-tracker             0%    3d
   ◇  flow-exp/cinema                    0%    1w
 ```
 
@@ -23,7 +23,7 @@ Jira is overkill. Notion is too slow. You need something that works at the speed
 
 **Go install** (requires Go 1.21+):
 ```bash
-go install github.com/drift-codes/drift/cmd@latest
+go install github.com/snowtema/drift/cmd@latest
 ```
 
 **Homebrew** (macOS/Linux):
@@ -32,11 +32,11 @@ brew install drift-codes/tap/drift
 ```
 
 **Binary download:**
-Grab a prebuilt binary from [Releases](https://github.com/drift-codes/drift/releases).
+Grab a prebuilt binary from [Releases](https://github.com/snowtema/drift/releases).
 
 **From source:**
 ```bash
-git clone https://github.com/drift-codes/drift
+git clone https://github.com/snowtema/drift
 cd drift
 go build -o drift ./cmd/
 ```

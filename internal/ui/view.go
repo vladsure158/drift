@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/drift-codes/drift/internal/protocol"
+	"github.com/snowtema/drift/internal/protocol"
 )
 
 func (m Model) View() string {
