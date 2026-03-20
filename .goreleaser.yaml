@@ -26,16 +26,6 @@ archives:
           - zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
-brews:
-  - repository:
-      owner: snowtema
-      name: homebrew-tap
-    homepage: "https://github.com/snowtema/drift"
-    description: "Lightweight project tracker for vibe coders"
-    license: "MIT"
-    install: |
-      bin.install "drift"
-
 checksum:
   name_template: "checksums.txt"
 
