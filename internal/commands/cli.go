@@ -513,11 +513,11 @@ func Scan(dir string, doInit bool, maxDepth int) {
 	}
 
 	if !doInit {
-		fmt.Printf(dim.Render("\n  Run: drift scan --init [dir]\n\n"))
+		fmt.Print(dim.Render("\n  Run: drift scan --init [dir]\n\n"))
 		return
 	}
 
-	fmt.Printf(cyan.Render("\n  Initializing all...\n\n"))
+	fmt.Print(cyan.Render("\n  Initializing all...\n\n"))
 	for _, f := range results {
 		p := protocol.CreateProject(f.Path)
 		p.Tags = f.Tags
