@@ -223,6 +223,182 @@ func DetectRepo(dir string) string {
 	return ""
 }
 
+// ScanResult is a discovered project not yet tracked by drift
+type ScanResult struct {
+	Path string
+	Tags []string
+}
+
+// ScanDir recursively finds projects in a directory.
+// maxDepth limits recursion (0 = root only, -1 = unlimited).
+// Skips directories that already have .drift/, and known non-project dirs.
+func ScanDir(root string, maxDepth int) []ScanResult {
+	var results []ScanResult
+	skipDirs := map[string]bool{
+		"node_modules": true, ".git": true, ".next": true, "__pycache__": true,
+		"dist": true, "build": true, "target": true, ".venv": true, "venv": true,
+		".drift": true, ".cache": true, "vendor": true,
+	}
+
+	var walk func(dir string, depth int)
+	walk = func(dir string, depth int) {
+		if maxDepth >= 0 && depth > maxDepth {
+			return
+		}
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return
+		}
+
+		// Check if this directory IS a project
+		isProject := false
+		for _, e := range entries {
+			switch e.Name() {
+			case ".git", "package.json", "pyproject.toml", "Cargo.toml", "go.mod",
+				"requirements.txt", "Makefile", "CMakeLists.txt", "pom.xml":
+				isProject = true
+			}
+		}
+
+		if isProject && !HasProject(dir) && dir != root {
+			results = append(results, ScanResult{
+				Path: dir,
+				Tags: DetectTags(dir),
+			})
+			return // Don't recurse into project subdirs
+		}
+
+		// Recurse into subdirectories
+		for _, e := range entries {
+			if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || skipDirs[e.Name()] {
+				continue
+			}
+			walk(filepath.Join(dir, e.Name()), depth+1)
+		}
+	}
+
+	walk(root, 0)
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Path < results[j].Path
+	})
+	return results
+}
+
+// BuildTree groups projects by their parent directory relative to a common root.
+type TreeNode struct {
+	Name     string      // directory name
+	FullPath string      // absolute path
+	Project  *FullProject // nil if just a directory
+	Children []*TreeNode
+}
+
+// BuildProjectTree organizes projects into a directory tree.
+func BuildProjectTree(projects []FullProject) *TreeNode {
+	if len(projects) == 0 {
+		return &TreeNode{Name: "~", Children: nil}
+	}
+
+	// Find common prefix
+	home, _ := os.UserHomeDir()
+	root := &TreeNode{Name: "~", FullPath: home}
+
+	for i := range projects {
+		p := &projects[i]
+		rel, err := filepath.Rel(home, p.Path)
+		if err != nil {
+			rel = p.Path
+		}
+		parts := strings.Split(rel, string(filepath.Separator))
+		insertIntoTree(root, parts, p)
+	}
+
+	// Collapse single-child directories
+	collapseTree(root)
+
+	return root
+}
+
+func insertIntoTree(node *TreeNode, parts []string, project *FullProject) {
+	if len(parts) == 0 {
+		return
+	}
+	if len(parts) == 1 {
+		// This is the project directory
+		node.Children = append(node.Children, &TreeNode{
+			Name:     parts[0],
+			FullPath: project.Path,
+			Project:  project,
+		})
+		return
+	}
+	// Find or create intermediate directory
+	dirName := parts[0]
+	var child *TreeNode
+	for _, c := range node.Children {
+		if c.Name == dirName && c.Project == nil {
+			child = c
+			break
+		}
+	}
+	if child == nil {
+		child = &TreeNode{
+			Name:     dirName,
+			FullPath: filepath.Join(node.FullPath, dirName),
+		}
+		node.Children = append(node.Children, child)
+	}
+	insertIntoTree(child, parts[1:], project)
+}
+
+func collapseTree(node *TreeNode) {
+	for _, c := range node.Children {
+		collapseTree(c)
+	}
+	// If a dir has exactly one child that's also a dir (not a project), collapse
+	for i, c := range node.Children {
+		if c.Project == nil && len(c.Children) == 1 && c.Children[0].Project == nil {
+			merged := c.Children[0]
+			merged.Name = c.Name + "/" + merged.Name
+			node.Children[i] = merged
+			collapseTree(merged) // re-check after collapse
+		}
+	}
+}
+
+// FlattenTree produces a flat list with indentation info for rendering.
+type TreeLine struct {
+	Indent  int
+	Name    string
+	IsDir   bool
+	Project *FullProject
+	Last    bool // last child at this level (for tree drawing)
+}
+
+func FlattenTree(node *TreeNode, indent int) []TreeLine {
+	var lines []TreeLine
+	for i, c := range node.Children {
+		last := i == len(node.Children)-1
+		if c.Project != nil {
+			lines = append(lines, TreeLine{
+				Indent:  indent,
+				Name:    c.Name,
+				IsDir:   false,
+				Project: c.Project,
+				Last:    last,
+			})
+		} else {
+			lines = append(lines, TreeLine{
+				Indent: indent,
+				Name:   c.Name,
+				IsDir:  true,
+				Last:   last,
+			})
+			lines = append(lines, FlattenTree(c, indent+1)...)
+		}
+	}
+	return lines
+}
+
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil

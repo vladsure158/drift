@@ -107,14 +107,17 @@ func main() {
 	case "scan":
 		doInit := false
 		dir := ""
+		maxDepth := 3 // default recursive depth
 		for _, a := range rest {
 			if a == "--init" {
 				doInit = true
+			} else if strings.HasPrefix(a, "--depth=") {
+				fmt.Sscanf(strings.TrimPrefix(a, "--depth="), "%d", &maxDepth)
 			} else {
 				dir = a
 			}
 		}
-		commands.Scan(dir, doInit)
+		commands.Scan(dir, doInit, maxDepth)
 
 	case "help", "-h", "--help":
 		commands.Help()

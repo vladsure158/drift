@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -58,13 +59,16 @@ func (m Model) renderHeader() string {
 	}
 	left := strings.Join(crumbs, "")
 
-	// Count / filter indicator
+	// Count / filter / view mode indicator
 	countStr := fmt.Sprintf(" %d", len(m.projects))
 	if m.filterText != "" {
 		countStr += fmt.Sprintf("/%d", len(m.allProjects))
 		countStr += Dim.Render(" ⌕ " + m.filterText)
 	}
 	left += Dim.Render(countStr)
+	if m.viewMode == ViewTree {
+		left += Dim.Render(" ") + AccentB.Render("tree")
+	}
 
 	// Sort indicator (right-aligned)
 	var sortParts []string
@@ -94,46 +98,162 @@ func (m Model) renderList(w, h int) string {
 		return Dim.Render("  No projects\n  Run drift init")
 	}
 
+	if m.viewMode == ViewTree {
+		return m.renderTreeList(w, h)
+	}
+	return m.renderFlatList(w, h)
+}
+
+func (m Model) renderFlatList(w, h int) string {
 	var rows []string
+	dimmed := m.focus != FocusList
 	end := Clamp(m.listScroll+h, 0, len(m.projects))
 	for i := m.listScroll; i < end; i++ {
 		p := m.projects[i]
 		selected := i == m.listIdx
-		dimmed := m.focus != FocusList
-
-		icon := StatusIcons[string(p.Status)]
-		color := StatusColors[string(p.Status)]
-		pct := fmt.Sprintf("%3d%%", p.Progress)
-		ts := TimeSince(p.LastActivity)
-
-		nameW := w - 14
-		if nameW < 5 {
-			nameW = 5
-		}
-		name := PadRight(Truncate(p.Name, nameW), nameW)
-
-		if selected && !dimmed {
-			row := fmt.Sprintf(" %s %s  %s %s", icon, name, pct, ts)
-			rows = append(rows, SelectedRow.Width(w).Render(row))
-		} else if dimmed {
-			row := fmt.Sprintf(" %s %s  %s %s",
-				Dim.Render(icon), Dim.Render(name), Dim.Render(pct), Dim.Render(PadRight(ts, 4)))
-			if selected {
-				rows = append(rows, DimSelectedRow.Width(w).Render(row))
-			} else {
-				rows = append(rows, row)
-			}
-		} else {
-			iconS := lipgloss.NewStyle().Foreground(color).Render(icon)
-			rows = append(rows, fmt.Sprintf(" %s %s  %s %s",
-				iconS, name, Dim.Render(pct), Dim.Render(PadRight(ts, 4))))
-		}
+		rows = append(rows, m.renderProjectRow(p, selected, dimmed, w))
 	}
-
 	for len(rows) < h {
 		rows = append(rows, "")
 	}
 	return strings.Join(rows, "\n")
+}
+
+func (m Model) renderTreeList(w, h int) string {
+	var rows []string
+	dimmed := m.focus != FocusList
+	end := Clamp(m.listScroll+h, 0, len(m.treeLines))
+	for i := m.listScroll; i < end; i++ {
+		line := m.treeLines[i]
+		selected := i == m.listIdx
+
+		// Build tree connector prefix
+		indent := strings.Repeat("  ", line.Indent)
+
+		if line.IsDir {
+			dirName := Truncate(line.Name+"/", w-line.Indent*2-2)
+			if dimmed {
+				rows = append(rows, indent+Dim.Render("  "+dirName))
+			} else {
+				rows = append(rows, indent+DimGrayS.Render("  "+dirName))
+			}
+		} else if line.Project != nil {
+			p := *line.Project
+			indentW := line.Indent * 2
+			availW := w - indentW
+
+			icon := StatusIcons[string(p.Status)]
+			color := StatusColors[string(p.Status)]
+			pct := fmt.Sprintf("%3d%%", p.Progress)
+
+			nameW := availW - 10
+			if nameW < 5 {
+				nameW = 5
+			}
+			name := PadRight(Truncate(p.Name, nameW), nameW)
+
+			connector := "├ "
+			if line.Last {
+				connector = "└ "
+			}
+
+			if selected && !dimmed {
+				row := fmt.Sprintf("%s%s%s %s  %s", indent, connector, icon, name, pct)
+				rows = append(rows, SelectedRow.Width(w).Render(row))
+			} else if dimmed {
+				row := fmt.Sprintf("%s%s%s %s  %s", indent,
+					Dim.Render(connector), Dim.Render(icon), Dim.Render(name), Dim.Render(pct))
+				if selected {
+					rows = append(rows, DimSelectedRow.Width(w).Render(row))
+				} else {
+					rows = append(rows, row)
+				}
+			} else {
+				iconS := lipgloss.NewStyle().Foreground(color).Render(icon)
+				connS := DimGrayS.Render(connector)
+				rows = append(rows, fmt.Sprintf("%s%s%s %s  %s", indent,
+					connS, iconS, name, Dim.Render(pct)))
+			}
+		}
+	}
+	for len(rows) < h {
+		rows = append(rows, "")
+	}
+	return strings.Join(rows, "\n")
+}
+
+func parentDir(p protocol.FullProject) string {
+	home, _ := os.UserHomeDir()
+	rel, err := filepath.Rel(home, p.Path)
+	if err != nil {
+		rel = p.Path
+	}
+	dir := filepath.Dir(rel)
+	if dir == "." || dir == "" {
+		return ""
+	}
+	// Show just the immediate parent
+	return filepath.Base(dir)
+}
+
+func (m Model) renderProjectRow(p protocol.FullProject, selected, dimmed bool, w int) string {
+	icon := StatusIcons[string(p.Status)]
+	color := StatusColors[string(p.Status)]
+	pct := fmt.Sprintf("%3d%%", p.Progress)
+	ts := TimeSince(p.LastActivity)
+	dir := parentDir(p)
+
+	// Calculate name width accounting for dir prefix
+	dirPart := ""
+	dirPartLen := 0
+	if dir != "" {
+		dirPart = dir + "/"
+		dirPartLen = len(dirPart)
+	}
+
+	nameW := w - 14 - dirPartLen
+	if nameW < 5 {
+		nameW = 5
+	}
+	name := Truncate(p.Name, nameW)
+	totalNameW := w - 14
+	if totalNameW < 5 {
+		totalNameW = 5
+	}
+	combined := dirPart + name
+	combined = PadRight(combined, totalNameW)
+
+	if selected && !dimmed {
+		row := fmt.Sprintf(" %s %s  %s %s", icon, combined, pct, ts)
+		return SelectedRow.Width(w).Render(row)
+	}
+	if dimmed {
+		var nameStr string
+		if dirPart != "" {
+			nameStr = Dim.Render(combined)
+		} else {
+			nameStr = Dim.Render(combined)
+		}
+		row := fmt.Sprintf(" %s %s  %s %s",
+			Dim.Render(icon), nameStr, Dim.Render(pct), Dim.Render(PadRight(ts, 4)))
+		if selected {
+			return DimSelectedRow.Width(w).Render(row)
+		}
+		return row
+	}
+	iconS := lipgloss.NewStyle().Foreground(color).Render(icon)
+	var nameStr string
+	if dirPart != "" {
+		nameStr = DimGrayS.Render(dirPart) + name
+		padLen := totalNameW - len(dirPart) - len(name)
+		if padLen > 0 {
+			nameStr += strings.Repeat(" ", padLen)
+		}
+	} else {
+		nameStr = PadRight(name, totalNameW)
+	}
+	return fmt.Sprintf(" %s %s  %s %s",
+		iconS, nameStr, Dim.Render(pct), Dim.Render(PadRight(ts, 4)))
 }
 
 // ─── Detail Panel ────────────────────────────────
@@ -333,7 +453,7 @@ func (m Model) renderFooter() string {
 	var parts []string
 	switch m.focus {
 	case FocusList:
-		parts = append(parts, kv("↑↓", "nav"), kv("⏎", "open"), kv("s", "sort"), kv("/", "filter"), kv(":", "jump"))
+		parts = append(parts, kv("↑↓", "nav"), kv("⏎", "open"), kv("s", "sort"), kv("t", "tree/flat"), kv("/", "filter"))
 		parts = append(parts, kv("?", "help"), kv("q", "quit"))
 	case FocusDetail:
 		switch m.detailSection {

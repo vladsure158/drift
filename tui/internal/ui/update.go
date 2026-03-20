@@ -10,7 +10,7 @@ import (
 // ─── List Mode ───────────────────────────────────
 
 func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	n := len(m.projects)
+	maxIdx := m.maxListIdx()
 
 	switch msg.String() {
 	case "q":
@@ -20,28 +20,41 @@ func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.focus = FocusHelp
 		return m, nil
 	case "up", "k":
-		if n > 0 {
-			m.listIdx = (m.listIdx - 1 + n) % n
+		if maxIdx >= 0 {
+			m.listIdx = (m.listIdx - 1 + maxIdx + 1) % (maxIdx + 1)
+			// In tree mode, skip directory-only lines
+			if m.viewMode == ViewTree {
+				m.skipDirLines(-1)
+			}
 		}
 	case "down", "j":
-		if n > 0 {
-			m.listIdx = (m.listIdx + 1) % n
+		if maxIdx >= 0 {
+			m.listIdx = (m.listIdx + 1) % (maxIdx + 1)
+			if m.viewMode == ViewTree {
+				m.skipDirLines(1)
+			}
 		}
 	case "home", "g":
 		m.listIdx = 0
 		m.listScroll = 0
+		if m.viewMode == ViewTree {
+			m.skipDirLines(1)
+		}
 	case "end", "G":
-		if n > 0 {
-			m.listIdx = n - 1
+		if maxIdx >= 0 {
+			m.listIdx = maxIdx
+			if m.viewMode == ViewTree {
+				m.skipDirLines(-1)
+			}
 		}
 	case "pgup", "ctrl+u":
-		m.listIdx = Clamp(m.listIdx-m.listHeight(), 0, n-1)
+		m.listIdx = Clamp(m.listIdx-m.listHeight(), 0, maxIdx)
 	case "pgdown", "ctrl+d":
-		m.listIdx = Clamp(m.listIdx+m.listHeight(), 0, n-1)
+		m.listIdx = Clamp(m.listIdx+m.listHeight(), 0, maxIdx)
 
 	// Enter detail
 	case "enter", "right", "l":
-		if n > 0 {
+		if m.selectedProject() != nil {
 			m.focus = FocusDetail
 			m.detailSection = SectionInfo
 			m.detailCursor = 0
@@ -52,6 +65,16 @@ func (m Model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "s":
 		m.sortMode = (m.sortMode + 1) % 4
 		m.applyFilterAndSort()
+		m.listIdx = 0
+		m.listScroll = 0
+
+	// Toggle tree/flat view
+	case "t":
+		if m.viewMode == ViewFlat {
+			m.viewMode = ViewTree
+		} else {
+			m.viewMode = ViewFlat
+		}
 		m.listIdx = 0
 		m.listScroll = 0
 

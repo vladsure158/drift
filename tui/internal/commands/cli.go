@@ -375,15 +375,39 @@ func List(sortMode string) {
 	}
 
 	fmt.Printf("\n%s  %s\n\n", cyanB.Render("  drift"), dim.Render(fmt.Sprintf("— %d projects — sort: %s", len(projects), sortMode)))
+	home, _ := os.UserHomeDir()
 	for _, p := range projects {
 		icon := statusIcon(string(p.Status))
-		name := p.Name
-		if len(name) > 22 {
-			name = name[:21] + "…"
+
+		// Show parent dir for disambiguation
+		rel, _ := filepath.Rel(home, p.Path)
+		dir := filepath.Dir(rel)
+		dirPrefix := ""
+		if dir != "." && dir != "" {
+			dirPrefix = filepath.Base(dir) + "/"
 		}
-		for len(name) < 22 {
-			name += " "
+
+		fullName := dirPrefix + p.Name
+		if len(fullName) > 28 {
+			fullName = fullName[:27] + "…"
 		}
+
+		// Render: dir part dim, name bright
+		var nameDisplay string
+		if dirPrefix != "" {
+			nameDisplay = dim.Render(dirPrefix) + p.Name
+			padLen := 28 - len(dirPrefix) - len(p.Name)
+			if padLen > 0 {
+				nameDisplay += strings.Repeat(" ", padLen)
+			}
+		} else {
+			name := p.Name
+			for len(name) < 28 {
+				name += " "
+			}
+			nameDisplay = name
+		}
+
 		pct := fmt.Sprintf("%3d%%", p.Progress)
 		bar := miniBar(p.Progress)
 		ts := ui.TimeSince(p.LastActivity)
@@ -391,7 +415,7 @@ func List(sortMode string) {
 		if p.Missing {
 			miss = red.Render(" [missing]")
 		}
-		fmt.Printf("  %s %s %s %s  %s%s\n", icon, name, bar, pct, dim.Render(ts), miss)
+		fmt.Printf("  %s %s %s %s  %s%s\n", icon, nameDisplay, bar, pct, dim.Render(ts), miss)
 	}
 	fmt.Println()
 }
@@ -421,7 +445,7 @@ func Open(name string) {
 	}
 }
 
-func Scan(dir string, doInit bool) {
+func Scan(dir string, doInit bool, maxDepth int) {
 	root := dir
 	if root == "" {
 		root = cwd()
@@ -429,38 +453,13 @@ func Scan(dir string, doInit bool) {
 		root, _ = filepath.Abs(root)
 	}
 
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		fmt.Printf("  %s\n", red.Render(err.Error()))
-		return
-	}
-
-	type found struct {
-		path string
-		tags []string
-	}
-	var results []found
-
-	for _, e := range entries {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || e.Name() == "node_modules" {
-			continue
-		}
-		full := filepath.Join(root, e.Name())
-		isProject := fileExists(filepath.Join(full, ".git")) ||
-			fileExists(filepath.Join(full, "package.json")) ||
-			fileExists(filepath.Join(full, "pyproject.toml")) ||
-			fileExists(filepath.Join(full, "Cargo.toml")) ||
-			fileExists(filepath.Join(full, "go.mod"))
-		if isProject && !protocol.HasProject(full) {
-			results = append(results, found{path: full, tags: protocol.DetectTags(full)})
-		}
-	}
+	results := protocol.ScanDir(root, maxDepth)
 
 	home, _ := os.UserHomeDir()
 	shortRoot := strings.Replace(root, home, "~", 1)
 
 	if len(results) == 0 {
-		fmt.Printf(dim.Render("\n  No new projects found in %s\n\n"), shortRoot)
+		fmt.Printf("\n%s\n\n", dim.Render("  No new projects found in "+shortRoot))
 		return
 	}
 
@@ -468,15 +467,19 @@ func Scan(dir string, doInit bool) {
 		cyanB.Render("drift scan"), bold.Render(strconv.Itoa(len(results))), dim.Render(shortRoot))
 
 	for _, f := range results {
-		name := filepath.Base(f.path)
-		for len(name) < 24 {
-			name += " "
+		// Show path relative to scan root
+		rel, _ := filepath.Rel(root, f.Path)
+		if rel == "" {
+			rel = filepath.Base(f.Path)
+		}
+		for len(rel) < 30 {
+			rel += " "
 		}
 		tags := dim.Render("—")
-		if len(f.tags) > 0 {
-			tags = dim.Render(strings.Join(f.tags, ", "))
+		if len(f.Tags) > 0 {
+			tags = dim.Render(strings.Join(f.Tags, ", "))
 		}
-		fmt.Printf("  %s %s\n", name, tags)
+		fmt.Printf("  %s %s\n", rel, tags)
 	}
 
 	if !doInit {
@@ -486,16 +489,17 @@ func Scan(dir string, doInit bool) {
 
 	fmt.Printf(cyan.Render("\n  Initializing all...\n\n"))
 	for _, f := range results {
-		p := protocol.CreateProject(f.path)
-		p.Tags = f.tags
-		repo := protocol.DetectRepo(f.path)
+		p := protocol.CreateProject(f.Path)
+		p.Tags = f.Tags
+		repo := protocol.DetectRepo(f.Path)
 		if repo != "" {
 			p.Links.Repo = &repo
 		}
-		protocol.WriteProject(f.path, p)
-		protocol.SyncToRegistry(f.path, p)
-		addToGitignore(f.path)
-		fmt.Printf("  %s %s\n", green.Render("✓"), p.Name)
+		protocol.WriteProject(f.Path, p)
+		protocol.SyncToRegistry(f.Path, p)
+		addToGitignore(f.Path)
+		rel, _ := filepath.Rel(root, f.Path)
+		fmt.Printf("  %s %s\n", green.Render("✓"), rel)
 	}
 	fmt.Println()
 }

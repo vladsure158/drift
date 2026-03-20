@@ -41,6 +41,13 @@ const (
 
 var SortLabels = []string{"recent", "progress", "name", "status"}
 
+type ListViewMode int
+
+const (
+	ViewFlat ListViewMode = iota
+	ViewTree
+)
+
 type DetailSection int
 
 const (
@@ -58,6 +65,8 @@ type Model struct {
 	allProjects []protocol.FullProject // unfiltered
 	projects    []protocol.FullProject // filtered + sorted view
 	filterText  string
+	treeLines   []protocol.TreeLine    // tree view cache
+	viewMode    ListViewMode
 
 	// Layout
 	width, height int
@@ -195,13 +204,32 @@ func (m *Model) applyFilterAndSort() {
 	}
 	// Sort
 	m.sortProjects()
+	// Build tree
+	tree := protocol.BuildProjectTree(m.projects)
+	m.treeLines = protocol.FlattenTree(tree, 0)
 	// Clamp index
-	if m.listIdx >= len(m.projects) {
-		m.listIdx = len(m.projects) - 1
+	maxIdx := m.maxListIdx()
+	if m.listIdx > maxIdx {
+		m.listIdx = maxIdx
 	}
 	if m.listIdx < 0 {
 		m.listIdx = 0
 	}
+}
+
+func (m *Model) maxListIdx() int {
+	if m.viewMode == ViewTree {
+		return len(m.treeLines) - 1
+	}
+	return len(m.projects) - 1
+}
+
+// selectedProjectFromTree returns the project at the current tree cursor
+func (m *Model) selectedProjectFromTree() *protocol.FullProject {
+	if m.listIdx < 0 || m.listIdx >= len(m.treeLines) {
+		return nil
+	}
+	return m.treeLines[m.listIdx].Project
 }
 
 func (m *Model) sortProjects() {
@@ -242,6 +270,9 @@ func sortBy(s []protocol.FullProject, less func(a, b protocol.FullProject) bool)
 }
 
 func (m *Model) selectedProject() *protocol.FullProject {
+	if m.viewMode == ViewTree {
+		return m.selectedProjectFromTree()
+	}
 	if m.listIdx < 0 || m.listIdx >= len(m.projects) {
 		return nil
 	}
@@ -249,20 +280,53 @@ func (m *Model) selectedProject() *protocol.FullProject {
 }
 
 func (m *Model) listHeight() int {
-	h := m.height - 4
+	// Must match what View() passes to renderList:
+	// bodyH = height - 3, then renderList gets bodyH - 2 = height - 5
+	h := m.height - 5
 	if h < 3 {
 		return 3
 	}
 	return h
 }
 
+// skipDirLines moves cursor past directory-only lines in tree mode
+func (m *Model) skipDirLines(direction int) {
+	max := len(m.treeLines)
+	if max == 0 {
+		return
+	}
+	for attempts := 0; attempts < max; attempts++ {
+		if m.listIdx >= 0 && m.listIdx < max && m.treeLines[m.listIdx].IsDir {
+			m.listIdx += direction
+			if m.listIdx < 0 {
+				m.listIdx = max - 1
+			}
+			if m.listIdx >= max {
+				m.listIdx = 0
+			}
+		} else {
+			break
+		}
+	}
+}
+
 func (m *Model) keepListInView() {
 	lh := m.listHeight()
+	maxIdx := m.maxListIdx()
+	if m.listIdx < 0 {
+		m.listIdx = 0
+	}
+	if m.listIdx > maxIdx {
+		m.listIdx = maxIdx
+	}
 	if m.listIdx < m.listScroll {
 		m.listScroll = m.listIdx
 	}
 	if m.listIdx >= m.listScroll+lh {
 		m.listScroll = m.listIdx - lh + 1
+	}
+	if m.listScroll < 0 {
+		m.listScroll = 0
 	}
 }
 
@@ -284,10 +348,19 @@ func (m *Model) mutate(fn func(*protocol.Project)) {
 	m.allProjects = all
 	m.applyFilterAndSort()
 	// Restore selection to same project after re-sort
-	for i, pp := range m.projects {
-		if pp.ID == projectID {
-			m.listIdx = i
-			break
+	if m.viewMode == ViewTree {
+		for i, line := range m.treeLines {
+			if line.Project != nil && line.Project.ID == projectID {
+				m.listIdx = i
+				break
+			}
+		}
+	} else {
+		for i, pp := range m.projects {
+			if pp.ID == projectID {
+				m.listIdx = i
+				break
+			}
 		}
 	}
 	m.keepListInView()
