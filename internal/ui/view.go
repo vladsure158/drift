@@ -27,7 +27,7 @@ func (m Model) headerHeight() int {
 	if m.showBanner() {
 		return driftBannerHeight + 3 // top padding + banner + bottom padding + info line
 	}
-	return 1 // just info line
+	return 1
 }
 
 func (m Model) View() string {
@@ -43,12 +43,11 @@ func (m Model) View() string {
 	hh := m.headerHeight()
 	listW := Clamp(m.width*38/100, 25, 44)
 	detailW := m.width - listW - 3
-	// bodyH: panel height passed to .Height()
-	// Original formula was height-3 (1 header + 1 footer + 1 buffer)
-	// With banner, add extra lines for banner area
-	bodyH := m.height - hh - 2
-	if bodyH < 4 {
-		bodyH = 4
+	// bodyH: content height inside panels (lipgloss Height excludes borders)
+	// total = hh + (bodyH + 2 borders) + 1 footer = height
+	bodyH := m.height - hh - 3
+	if bodyH < 3 {
+		bodyH = 3
 	}
 
 	header := m.renderHeader()
@@ -92,9 +91,9 @@ func (m Model) renderHeader() string {
 	left := strings.Join(crumbs, "")
 
 	// Count / filter / view mode indicator
-	countStr := fmt.Sprintf(" %d", len(m.projects))
+	countStr := fmt.Sprintf(" Total: %d", len(m.projects))
 	if m.filterText != "" {
-		countStr += fmt.Sprintf("/%d", len(m.allProjects))
+		countStr = fmt.Sprintf(" %d/%d", len(m.projects), len(m.allProjects))
 		countStr += Dim.Render(" ⌕ " + m.filterText)
 	}
 	left += Dim.Render(countStr)
@@ -139,10 +138,20 @@ func (m Model) renderHeader() string {
 	}
 	header.WriteString(firstLine + strings.Repeat(" ", vGap) + versionStr + "\n")
 
-	// Remaining banner lines
-	for _, line := range driftBanner[1:] {
-		header.WriteString(" " + AccentB.Render(line) + "\n")
+	// Middle banner line
+	header.WriteString(" " + AccentB.Render(driftBanner[1]) + "\n")
+
+	// Last banner line with "b to hide" hint
+	lastLine := " " + AccentB.Render(driftBanner[2])
+	if m.bannerHintTicks > 0 {
+		hint := Dim.Render("b to hide")
+		hGap := m.width - lipgloss.Width(lastLine) - lipgloss.Width(hint) - 1
+		if hGap < 1 {
+			hGap = 1
+		}
+		lastLine += strings.Repeat(" ", hGap) + hint
 	}
+	header.WriteString(lastLine + "\n")
 
 	header.WriteString("\n") // bottom padding
 	header.WriteString(infoLine)

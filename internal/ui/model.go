@@ -103,6 +103,7 @@ type Model struct {
 	version         string
 	bannerCollapsed bool
 	themeIdx        int
+	bannerHintTicks int // countdown for "b to hide" hint
 }
 
 func NewModel(version string) Model {
@@ -142,6 +143,7 @@ func NewModel(version string) Model {
 		bannerCollapsed: cfg.BannerCollapsed,
 		viewMode:        viewMode,
 		sortMode:        sortMode,
+		bannerHintTicks: 5,
 	}
 }
 
@@ -159,13 +161,14 @@ func (m *Model) saveConfig() {
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(tea.EnterAltScreen, loadProjectsCmd)
+	return tea.Batch(tea.EnterAltScreen, loadProjectsCmd, bannerHintCmd())
 }
 
 // ─── Messages ────────────────────────────────────
 
 type projectsLoadedMsg struct{ projects []protocol.FullProject }
 type flashTickMsg struct{}
+type bannerHintTickMsg struct{}
 
 func loadProjectsCmd() tea.Msg {
 	projects, _ := protocol.LoadAllProjects()
@@ -174,6 +177,10 @@ func loadProjectsCmd() tea.Msg {
 
 func FlashCmd() tea.Cmd {
 	return tea.Tick(time.Second, func(_ time.Time) tea.Msg { return flashTickMsg{} })
+}
+
+func bannerHintCmd() tea.Cmd {
+	return tea.Tick(time.Second, func(_ time.Time) tea.Msg { return bannerHintTickMsg{} })
 }
 
 // ─── Update Router ───────────────────────────────
@@ -202,6 +209,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, tea.Tick(time.Second, func(_ time.Time) tea.Msg { return flashTickMsg{} })
+
+	case bannerHintTickMsg:
+		m.bannerHintTicks--
+		if m.bannerHintTicks <= 0 {
+			return m, nil
+		}
+		return m, tea.Tick(time.Second, func(_ time.Time) tea.Msg { return bannerHintTickMsg{} })
 
 	case tea.KeyMsg:
 		// Global: Ctrl+C always quits
@@ -331,9 +345,9 @@ func (m *Model) selectedProject() *protocol.FullProject {
 }
 
 func (m *Model) listHeight() int {
-	// Must match what View() passes to renderList: bodyH-2
+	// Must match View(): renderList gets bodyH-2 where bodyH = height-hh-3
 	hh := m.headerHeight()
-	h := m.height - hh - 2 - 2
+	h := m.height - hh - 3 - 2
 	if h < 3 {
 		return 3
 	}
