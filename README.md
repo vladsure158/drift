@@ -19,6 +19,9 @@ Jira is overkill. Notion is too slow. You need something that works at the speed
 
 **drift** is a file-based project tracker that lives in your terminal:
 - **Fullscreen TUI** — dual-panel, keyboard-driven, no flicker
+- **5 color themes** — cyan, claude, green, purple, mono — persisted across sessions
+- **TUI scanner** — browse directories, discover projects, batch-init with checkboxes
+- **Tree & flat views** — hierarchical or flat, collapsible single-child dirs
 - **Fast CLI** — all commands work without TUI
 - **Open protocol** — plain JSON `.drift/` files, no database, no server
 - **Auto-enrichment** — detects stack, repo URL, deploy links
@@ -72,25 +75,61 @@ drift scan ~/Develop --depth=2 --init
 drift
 ```
 
+Or use the TUI scanner: press `S` in the project list to browse directories, pick a folder, and batch-init discovered projects with checkboxes.
+
+## Themes
+
+drift ships with 5 color themes. Press `T` in the TUI to cycle through them:
+
+**cyan** (default) · **claude** (warm terracotta) · **green** (matrix) · **purple** · **mono** (grayscale)
+
+Theme, view mode (tree/flat), sort order, and banner state are persisted in `~/.drift/config.json`.
+
 ## TUI Keyboard Shortcuts
 
 Fullscreen dual-panel interface. Press `?` inside for full reference.
+
+### List View
 
 | Key | Action |
 |-----|--------|
 | `j/k` or arrows | Navigate projects |
 | `Enter` | Open project detail |
-| `Esc` | Back to list |
+| `s` | Cycle sort (recent/progress/name/status) |
+| `t` | Toggle tree/flat view |
+| `S` | Scan for new projects (directory browser) |
+| `/` | Live filter by name |
+| `:` | Jump to project by name |
+| `b` | Toggle ASCII banner |
+| `T` | Cycle color theme |
+| `?` | Full keyboard reference |
+| `q` | Quit |
+
+### Detail View
+
+| Key | Action |
+|-----|--------|
 | `Tab` | Cycle sections (info/goals/notes) |
 | `Space/Enter` | Toggle goal done |
 | `n` | Add note |
 | `g` | Add goal |
+| `D` | Edit description |
+| `x` | Delete goal (with confirm) |
 | `1-5` | Set status (active/idea/paused/done/abandoned) |
-| `s` | Cycle sort (recent/progress/name/status) |
-| `t` | Toggle tree/flat view |
-| `/` | Live filter |
 | `c` | Open Claude Code in project |
-| `?` | Full help |
+| `[` / `]` | Prev/next project |
+| `Esc` | Back to list |
+
+### Scan Mode (`S` from list)
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Enter directory |
+| `h` / `Backspace` | Go to parent |
+| `s` | Scan current directory |
+| `Space` | Toggle project selection |
+| `a` / `n` | Select all / none |
+| `Enter` | Batch init selected projects |
 
 ## CLI Commands
 
