@@ -9,7 +9,7 @@
 
 > Track dozens of vibe-code projects without leaving your terminal. Single binary, zero dependencies.
 
-![drift TUI demo](demo.gif)
+![drift TUI demo](demo.png)
 
 ## Why drift?
 
